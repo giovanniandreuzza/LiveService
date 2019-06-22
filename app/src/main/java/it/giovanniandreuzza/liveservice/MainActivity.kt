@@ -1,12 +1,9 @@
 package it.giovanniandreuzza.liveservice
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import it.giovanniandreuzza.liveservice.LiveService.Companion.dataFromActivity
-import it.giovanniandreuzza.liveservice.LiveService.Companion.dataToActivity
+import io.reactivex.schedulers.Schedulers
 
 
 class MainActivity : AppCompatActivity() {
@@ -15,12 +12,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val service = Intent(applicationContext, MyService::class.java)
-        applicationContext.startService(service)
+        Log.d("ACTIVITY", "START ACTIVITY")
+        LiveService.startService(applicationContext, MyService::class.java)
 
-        dataToActivity.observe(this, Observer {
-            Log.d("ACTIVITY", "Data from service")
-            executeInBackground(dataFromActivity.postValue(true))
-        })
+        val d = RxService.getActivitySubject()
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe({
+                Log.d("ACTIVITY", "$it received")
+            }, {
+
+            })
+
+        Log.d("ACTIVITY", "Send data")
+        RxService.getServiceSubject().onNext(1)
     }
 }
