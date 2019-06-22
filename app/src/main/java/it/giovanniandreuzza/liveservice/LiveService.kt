@@ -1,13 +1,16 @@
 package it.giovanniandreuzza.liveservice
 
+import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.IBinder
 import android.util.Log
-import androidx.lifecycle.LifecycleService
 import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.functions.Consumer
+import org.apache.commons.lang.SerializationUtils
+import java.io.Serializable
 
-abstract class LiveService : LifecycleService() {
+abstract class LiveService : Service() {
 
     private lateinit var serviceDisposable: Disposable
 
@@ -29,25 +32,35 @@ abstract class LiveService : LifecycleService() {
 
     abstract fun initService()
 
-    abstract fun <T> onCommandReceived(command: T)
+    abstract fun <T> onCommandReceived(code: TEST, command: T)
 
     override fun onCreate() {
         super.onCreate()
 
-        Log.d("SERVICE", "CREATED")
+        serviceDisposable = RxService.subscribeOnService(Consumer {
+            Log.d("SERVICE", "On next received")
 
-        serviceDisposable =
-            RxService.getServiceSubject()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .subscribe({
-                    Log.d("SERVICE", "$it received")
-                    RxService.getActivitySubject().onNext("Ciao")
-                }, {
+            val objDeserialize = SerializationUtils.deserialize(it.responseValue)
 
-                })
+            if (objDeserialize.cast(it.responseCommand.clazz.java)::class == it.responseCommand.clazz) {
+                onCommandReceived(
+                    it.responseCommand,
+                    objDeserialize
+                )
+            } else {
+                throw IllegalArgumentException("\"responseValue\" type doesn't match with the \"responseCommand\" one. It should be \"${it.responseCommand.clazz}\" type")
+            }
+        })
 
         initService()
+    }
+
+    fun <T> Any.cast(c: Class<T>): T {
+        return this as T
+    }
+
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -57,10 +70,14 @@ abstract class LiveService : LifecycleService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d("SERVICE", "Service stopped")
+
         if (!serviceDisposable.isDisposed) {
             serviceDisposable.dispose()
         }
+    }
+
+    fun <T : Serializable> sendResponse(command: TEST, response: T) {
+        RxService.publishOnActivity(LiveResponse(command, SerializationUtils.serialize(response)))
     }
 
 }

@@ -18,5 +18,4 @@ public class LiveServiceAnnotation {
     @Retention(RetentionPolicy.SOURCE)
     public @interface StartResult {}
 
-
 }

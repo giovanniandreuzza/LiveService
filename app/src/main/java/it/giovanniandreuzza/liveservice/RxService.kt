@@ -1,15 +1,34 @@
 package it.giovanniandreuzza.liveservice
 
+import android.util.Log
+import io.reactivex.disposables.Disposable
+import io.reactivex.functions.Consumer
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
+
 
 object RxService {
 
-    private val behaviorSubjectActivity: BehaviorSubject<Any> = BehaviorSubject.create()
+    private val behaviorSubjectActivity = BehaviorSubject.create<LiveResponse>()
 
-    fun getActivitySubject(): BehaviorSubject<Any> = behaviorSubjectActivity
+    fun subscribeOnActivity(action: Consumer<LiveResponse>): Disposable =
+        behaviorSubjectActivity.subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe(action)
 
-    private val behaviorSubjectService: BehaviorSubject<Any> = BehaviorSubject.create()
+    fun publishOnActivity(message: LiveResponse) = behaviorSubjectActivity.onNext(message)
 
-    fun getServiceSubject(): BehaviorSubject<Any> = behaviorSubjectService
 
+    private val behaviorSubjectService = BehaviorSubject.create<LiveResponse>()
+
+    fun subscribeOnService(action: Consumer<LiveResponse>): Disposable =
+        behaviorSubjectService.subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe(action, Consumer {
+                Log.d("ERROR", "Error -> ${it.message}")
+            })
+
+    fun publishOnService(message: LiveResponse) {
+        behaviorSubjectService.onNext(message)
+    }
 }
