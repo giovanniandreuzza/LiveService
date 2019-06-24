@@ -6,6 +6,21 @@ class MyService : LiveService() {
 
     override fun getStartValue(): Int = START_STICKY
 
+    override fun getCommandList() = object : CommandTest {
+        override fun c() {
+
+        }
+
+        override fun a() {
+            Log.d("TEST", "Funziona")
+        }
+
+        override fun b() {
+
+        }
+
+    }
+
     override fun initService() {
         // do init stuff here (ex. init bluetooth or what else)
     }

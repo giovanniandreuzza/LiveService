@@ -30,6 +30,8 @@ abstract class LiveService : Service() {
     @LiveServiceAnnotation.StartResult
     abstract fun getStartValue(): Int
 
+    abstract fun getCommandList(): Any
+
     abstract fun initService()
 
     abstract fun <T> onCommandReceived(code: TEST, command: T)
@@ -42,7 +44,26 @@ abstract class LiveService : Service() {
 
             val objDeserialize = SerializationUtils.deserialize(it.responseValue)
 
-            if (objDeserialize.cast(it.responseCommand.clazz.java)::class == it.responseCommand.clazz) {
+            if (objDeserialize::class == it.responseCommand.clazz) {
+
+                val a = object : CommandTest {
+                    override fun a() {
+
+                    }
+
+                    override fun b() {
+
+                    }
+
+                    override fun c() {
+
+                    }
+                }
+
+
+                Log.d("TEST", CommandTest::c.name + " ${getCommandList()::class.java}  ${a::class.java}")
+                (getCommandList().cast(a::class.java)).a()
+
                 onCommandReceived(
                     it.responseCommand,
                     objDeserialize
@@ -53,10 +74,6 @@ abstract class LiveService : Service() {
         })
 
         initService()
-    }
-
-    fun <T> Any.cast(c: Class<T>): T {
-        return this as T
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -74,6 +91,10 @@ abstract class LiveService : Service() {
         if (!serviceDisposable.isDisposed) {
             serviceDisposable.dispose()
         }
+    }
+
+    fun <T> Any.cast(c: Class<T>): T {
+        return this as T
     }
 
     fun <T : Serializable> sendResponse(command: TEST, response: T) {
