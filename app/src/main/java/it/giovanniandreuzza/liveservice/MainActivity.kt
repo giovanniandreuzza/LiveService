@@ -21,22 +21,11 @@ class MainActivity : AppCompatActivity() {
         LiveService.startService(applicationContext, MyService::class.java)
 
         val d = RxService.subscribeOnActivity(Consumer {
-            when (it.responseCommand) {
-                TEST.A -> {
-                    Log.d("ACTIVITY", "${SerializationUtils.deserialize(it.responseValue)} received")
-                    RxService.publishOnService(LiveResponse(TEST.A, SerializationUtils.serialize(0)))
-                    RxService.publishOnService(LiveResponse(TEST.A, SerializationUtils.serialize(1)))
-                    RxService.publishOnService(LiveResponse(TEST.A, SerializationUtils.serialize(2)))
-                    RxService.publishOnService(LiveResponse(TEST.A, SerializationUtils.serialize(3)))
-                }
-                TEST.B -> {
-                    Log.d("ACTIVITY", "${SerializationUtils.deserialize(it.responseValue)} received")
-                }
-            }
+
         })
 
         Log.d("ACTIVITY", "Send data")
-        RxService.publishOnService(LiveResponse(TEST.B, SerializationUtils.serialize("a")))
+        RxService.publishOnService(LiveResponse(CommandTest::getStatus.name, 9))
     }
 
 

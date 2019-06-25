@@ -1,7 +1,7 @@
 package it.giovanniandreuzza.liveservice
 
-interface CommandTest: CommandInterface {
+interface CommandTest {
 
-    fun c()
+    fun getStatus(x: Int): Int
 
 }
