@@ -9,6 +9,9 @@ class MyService : LiveService() {
     }
 
     override fun getCommandList() = object : CommandTest {
+        override fun ciao() {
+            println("ciao")
+        }
 
         override fun getStatus(x: Int): Int {
             return x * x

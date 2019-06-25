@@ -4,4 +4,6 @@ interface CommandTest {
 
     fun getStatus(x: Int): Int
 
+    fun ciao()
+
 }

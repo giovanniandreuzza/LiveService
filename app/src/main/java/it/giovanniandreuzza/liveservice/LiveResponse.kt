@@ -1,3 +1,5 @@
 package it.giovanniandreuzza.liveservice
 
-data class LiveResponse(val responseCommand: String, val responseValue: Any)
+import io.reactivex.subjects.BehaviorSubject
+
+data class LiveResponse<T>(val responseCommand: String, val subject: BehaviorSubject<T>, val responseValue: Any?)

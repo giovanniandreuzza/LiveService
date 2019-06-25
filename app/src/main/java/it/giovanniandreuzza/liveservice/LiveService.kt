@@ -7,13 +7,8 @@ import android.os.IBinder
 import android.util.Log
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
-import org.apache.commons.lang.SerializationUtils
-import java.io.Serializable
-import java.lang.reflect.InvocationHandler
-import java.lang.reflect.Method
-import java.lang.reflect.Proxy
+import io.reactivex.subjects.BehaviorSubject
 import kotlin.reflect.jvm.kotlinFunction
-import kotlin.reflect.jvm.reflect
 
 abstract class LiveService : Service() {
 
@@ -44,54 +39,11 @@ abstract class LiveService : Service() {
 
         serviceDisposable = RxService.subscribeOnService(Consumer {
             Log.d("SERVICE", "On next received")
-
-            // println("${create(CommandTest::class.java).getStatus(8)}")
-
-            getCommandList()::class.java.methods.forEach { method ->
-                if (method.name == it.responseCommand) {
-                    Log.d("SERVICE", "${method.kotlinFunction?.call(getCommandList(), it.responseValue)}")
-                }
-            }
-
-
-            //  println("${create(CommandTest::class.java).getStatus(8)}")
-
-
-            /*val objDeserialize = SerializationUtils.deserialize(it.responseValue)
-
-            if (objDeserialize::class == it.responseCommand.clazz) {
-
-                getCommandList().javaClass.methods.forEach { method ->
-                    if (method.name == CommandTest::a.name) {
-                        method.kotlinFunction?.call(getCommandList())
-                    }
-                }
-
-                Log.d("TEST", "${getCommandList()::class.java}  ${a::class.java}")
-                (getCommandList().cast(a::class.java)).a()
-
-                onCommandReceived(
-                    it.responseCommand,
-                    objDeserialize
-                )
-            } else {
-                throw IllegalArgumentException("\"responseValue\" type doesn't match with the \"responseCommand\" one. It should be \"${it.responseCommand.clazz}\" type")
-            }*/
+            prepareRequest(it.responseCommand, it.subject, it.responseValue)
         })
 
         initService()
     }
-
-    fun <T> create(service: Class<T>): T =
-        Proxy.newProxyInstance(service.classLoader, arrayOf<Class<*>>(service), object : InvocationHandler {
-            private val emptyArgs = arrayOfNulls<Any>(0)
-
-            @Throws(Throwable::class)
-            override operator fun invoke(proxy: Any, method: Method, vararg args: Any?): T {
-                return method.kotlinFunction?.call(getCommandList(), args[0] ?: emptyArgs) as T
-            }
-        }) as T
-
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -110,8 +62,17 @@ abstract class LiveService : Service() {
         }
     }
 
-    fun sendResponse(command: String, response: Any) {
-        RxService.publishOnActivity(LiveResponse(command, response))
+    private fun prepareRequest(command: String, behaviorSubject: BehaviorSubject<Any>, data: Any?) {
+        getCommandList().javaClass.methods.forEach { method ->
+            var commandString = command.replaceBefore(method.name, "")
+            commandString = commandString.replaceAfter(method.name, "")
+
+            if (method.name == commandString) {
+                data?.let {
+                    behaviorSubject.onNext(method.kotlinFunction?.call(getCommandList(), it)!!)
+                } ?: behaviorSubject.onNext(method.kotlinFunction?.call(getCommandList())!!)
+            }
+        }
     }
 
 }
