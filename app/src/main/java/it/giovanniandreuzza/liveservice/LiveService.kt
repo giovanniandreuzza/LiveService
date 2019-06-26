@@ -7,7 +7,7 @@ import android.os.IBinder
 import android.util.Log
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.ReplaySubject
 import kotlin.reflect.jvm.kotlinFunction
 
 abstract class LiveService : Service() {
@@ -62,15 +62,15 @@ abstract class LiveService : Service() {
         }
     }
 
-    private fun prepareRequest(command: String, behaviorSubject: BehaviorSubject<Any>, data: Any?) {
+    private fun prepareRequest(command: String, replaySubject: ReplaySubject<Any>, data: Any?) {
         getCommandList().javaClass.methods.forEach { method ->
             var commandString = command.replaceBefore(method.name, "")
             commandString = commandString.replaceAfter(method.name, "")
 
             if (method.name == commandString) {
                 data?.let {
-                    behaviorSubject.onNext(method.kotlinFunction?.call(getCommandList(), it)!!)
-                } ?: behaviorSubject.onNext(method.kotlinFunction?.call(getCommandList())!!)
+                    replaySubject.onNext(method.kotlinFunction?.call(getCommandList(), it)!!)
+                } ?: replaySubject.onNext(method.kotlinFunction?.call(getCommandList())!!)
             }
         }
     }

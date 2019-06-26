@@ -3,9 +3,13 @@ package it.giovanniandreuzza.liveservice
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Consumer
 
+
 class MainActivity : AppCompatActivity() {
+
+    private var compositeDisposable: CompositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -15,12 +19,24 @@ class MainActivity : AppCompatActivity() {
         LiveService.startService(applicationContext, MyService::class.java)
 
         Log.d("ACTIVITY", "Send data")
-        val disposable = CommandTest::getStatus.params(4).observe(Consumer {
-            Log.d("Test", "$it")
-        })
+        compositeDisposable.addAll(
+            CommandTest::getStatus.params(1).observe(Consumer {
+                Log.d("Test", "A $it")
+            }), CommandTest::ciao.params().observe(Consumer {
+                Log.d("Test", "B $it")
+            }), CommandTest::getStatus.params(3).observe(Consumer {
+                Log.d("Test", "C $it")
+            }), CommandTest::ciao.params().observe(Consumer {
+                Log.d("Test", "D $it")
+            })
+        )
 
-        val disposable1 = CommandTest::ciao.params().observe(Consumer {
-            Log.d("Test", "$it")
-        })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (!compositeDisposable.isDisposed) {
+            compositeDisposable.dispose()
+        }
     }
 }
